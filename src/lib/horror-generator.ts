@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import fetch from "node-fetch";
+// @ts-ignore
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
 import ffprobeStatic from "ffprobe-static";
