@@ -47,19 +47,19 @@ export async function generateHorrorScript(apiKey: string) {
     }
   );
 
-  const data = await res.json() as any;
+  const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
     console.error("API xatosi:", JSON.stringify(data, null, 2));
     throw new Error("Failed to generate script: API no text");
   }
-  
+
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
   if (start === -1 || end === -1) {
     throw new Error("Failed to find JSON in AI response");
   }
-  
+
   const cleanJson = text.substring(start, end + 1);
   try {
     return JSON.parse(cleanJson);
@@ -74,7 +74,7 @@ export async function generateImage(prompt: string, outputPath: string, isThumbn
   // Asosiy video va Thumbnail uchun ham format 1920x1080 (16:9)
   const width = 1920;
   const height = 1080;
-  
+
   const encodedPrompt = encodeURIComponent(prompt + ", ultra realistic, 8k, dark horror lighting, cinematic");
   const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&nologo=true`;
 
@@ -82,7 +82,7 @@ export async function generateImage(prompt: string, outputPath: string, isThumbn
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Rasm yasashda HTTP xato: ${response.status}`);
-      
+
       const buffer = await response.arrayBuffer();
       await fs.writeFile(outputPath, Buffer.from(buffer));
       return outputPath;
@@ -98,14 +98,14 @@ export async function generateImage(prompt: string, outputPath: string, isThumbn
 // 3. Audio yasash (Google TTS - 100% Tekin, Limitsiz)
 export async function generateAudio(text: string, outputPath: string, retries = 3): Promise<string> {
   const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-gb&q=${encodeURIComponent(text)}`;
-  
+
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`TTS HTTP error: ${response.status}`);
       }
-      
+
       const buffer = await response.arrayBuffer();
       await fs.writeFile(outputPath, Buffer.from(buffer));
       return outputPath;
@@ -121,7 +121,7 @@ export async function generateAudio(text: string, outputPath: string, retries = 
 // 4. Sahnalarni videoga aylantirish va birlashtirish (FFmpeg Multi-stage)
 // 4. Sahnalarni videoga aylantirish va birlashtirish (FFmpeg Multi-stage)
 const getDuration = (filePath: string): Promise<number> => new Promise((resolve, reject) => {
-  ffmpeg.ffprobe(filePath, (err, metadata) => {
+  ffmpeg.ffprobe(filePath, (err: any, metadata: { format: { duration: any; }; }) => {
     if (err) reject(err);
     else resolve(metadata.format.duration || 5);
   });
@@ -129,17 +129,17 @@ const getDuration = (filePath: string): Promise<number> => new Promise((resolve,
 
 export async function createSceneVideo(imagePath: string, audioPath: string, outputPath: string, isScary = false): Promise<void> {
   const duration = await getDuration(audioPath);
-  
+
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg()
       .input(imagePath)
       .loop(duration) // loop exactly for the duration
       .input(audioPath);
-      
-    const visualFilters = isScary 
+
+    const visualFilters = isScary
       ? `zoompan=z='min(zoom+0.015,1.5)':d=25*${duration}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080,eq=contrast=1.5:brightness=-0.1,fade=t=in:st=0:d=0.5,fade=t=out:st=${duration - 0.5}:d=0.5`
       : `zoompan=z='min(zoom+0.0015,1.5)':d=25*${duration}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080,fade=t=in:st=0:d=1,fade=t=out:st=${duration - 1}:d=1`;
-      
+
     const audioFilters = isScary
       ? `vibrato=f=6.5:d=0.5,aecho=0.8:0.88:60:0.4` // Demonic scary voice
       : `afade=t=in:st=0:d=0.5,afade=t=out:st=${duration - 0.5}:d=0.5`; // Normal fade
@@ -159,18 +159,18 @@ export async function createSceneVideo(imagePath: string, audioPath: string, out
       ])
       .save(outputPath)
       .on("end", () => resolve())
-      .on("error", (err: any) => reject(err));
+      .on("error", (err) => reject(err));
   });
 }
 
 export async function mergeScenes(sceneVideos: string[], finalOutputPath: string): Promise<void> {
   const concatListPath = path.join(process.cwd(), "tmp", "concat_list.txt");
   const concatOutputPath = path.join(process.cwd(), "tmp", "concat_output.mp4");
-  
+
   // 1. Create concat list
   const listContent = sceneVideos.map(v => `file '${v}'`).join('\n');
   await fs.writeFile(concatListPath, listContent);
-  
+
   // 2. Concat videos (Fast, no re-encoding)
   await new Promise<void>((resolve, reject) => {
     ffmpeg()
@@ -179,7 +179,7 @@ export async function mergeScenes(sceneVideos: string[], finalOutputPath: string
       .outputOptions('-c copy')
       .save(concatOutputPath)
       .on("end", () => resolve())
-      .on("error", (err: any) => reject(err));
+      .on("error", (err) => reject(err));
   });
 
   // 3. Add background creepy drone music
