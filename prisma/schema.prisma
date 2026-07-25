@@ -3,22 +3,24 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  refresh_token_expires_in Int?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -34,13 +36,19 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?      @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
+  channels      Channel[]
+  competitors   Competitor[]
+  scripts       Script[]
+  videos        Video[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model VerificationToken {
@@ -49,4 +57,108 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Channel {
+  id              String   @id @default(cuid())
+  userId          String
+  youtubeId       String
+  title           String
+  description     String?
+  customUrl       String?
+  thumbnailUrl    String?
+  subscriberCount Int      @default(0)
+  viewCount       Int      @default(0)
+  videoCount      Int      @default(0)
+  niche           String?
+  language        String   @default("uz")
+  analysisJson    String?
+  lastSyncedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competitors Competitor[]
+  scripts     Script[]
+  videos      Video[]
+
+  @@unique([userId, youtubeId])
+}
+
+model Competitor {
+  id              String   @id @default(cuid())
+  userId          String
+  channelId       String?
+  youtubeId       String
+  title           String
+  thumbnailUrl    String?
+  subscriberCount Int      @default(0)
+  viewCount       Int      @default(0)
+  videoCount      Int      @default(0)
+  niche           String?
+  notes           String?
+  recentVideosJson String?
+  lastSyncedAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, youtubeId])
+}
+
+model Script {
+  id           String   @id @default(cuid())
+  userId       String
+  channelId    String?
+  title        String
+  topic        String
+  niche        String?
+  hook         String?
+  body         String
+  cta          String?
+  scenesJson   String?
+  seoTitle     String?
+  seoDescription String?
+  hashtags     String?
+  tags         String?
+  trendScore   Int      @default(0)
+  status       String   @default("draft")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  videos  Video[]
+}
+
+model Video {
+  id            String    @id @default(cuid())
+  userId        String
+  channelId     String?
+  scriptId      String?
+  title         String
+  description   String?
+  hashtags      String?
+  tags          String?
+  thumbnailIdea String?
+  status        String    @default("queued")
+  youtubeVideoId String?
+  publishAt     DateTime?
+  scenesJson    String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  script  Script?  @relation(fields: [scriptId], references: [id], onDelete: SetNull)
+}
+
+model Whitelist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  addedBy   String?  // Kim tomonidan qo'shilganligi
+  createdAt DateTime @default(now())
 }

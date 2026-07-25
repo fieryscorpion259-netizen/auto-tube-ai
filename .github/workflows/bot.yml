@@ -1,0 +1,39 @@
+name: AutoTube AI Bot 🤖
+
+on:
+  schedule:
+    # UTC vaqtida. O'zbekiston vaqti (UTC+5) bo'yicha 10:00 da ishlashi uchun UTC da 05:00 ni belgilaymiz.
+    - cron: '0 5 * * *'
+  # Qo'lda (Manual) ishga tushirish imkoniyati
+  workflow_dispatch:
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Kodlarni yuklash
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Node.js o'rnatish
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Kutubxonalarni yuklash
+        run: npm ci
+        
+      - name: 🗄️ Baza (Prisma) ni sozlash
+        run: npx prisma generate
+
+      - name: 🎬 Avtopilot Botni ishga tushirish
+        env:
+          # Bu yerga GitHub Secrets orqali maxfiy kalitlarni kiritamiz
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        run: npx tsx scripts/run-pipeline.ts

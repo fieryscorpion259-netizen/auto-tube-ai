@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AutoTube AI - YouTube Automation",
-  description: "Automate your YouTube channel with AI",
+  title: "AutoTube AI — YouTube kanal avtomatlashtirish",
+  description:
+    "Kanal tahlili, raqobatchilar, trend ssenariy, SEO va video paket — bir platformada.",
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="uz"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
