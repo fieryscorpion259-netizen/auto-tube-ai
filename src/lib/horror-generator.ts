@@ -47,7 +47,7 @@ export async function generateHorrorScript(apiKey: string) {
     }
   );
 
-  const data = await res.json();
+  const data = await res.json() as any;
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
     console.error("API xatosi:", JSON.stringify(data, null, 2));
@@ -159,7 +159,7 @@ export async function createSceneVideo(imagePath: string, audioPath: string, out
       ])
       .save(outputPath)
       .on("end", () => resolve())
-      .on("error", (err) => reject(err));
+      .on("error", (err: any) => reject(err));
   });
 }
 
@@ -179,7 +179,7 @@ export async function mergeScenes(sceneVideos: string[], finalOutputPath: string
       .outputOptions('-c copy')
       .save(concatOutputPath)
       .on("end", () => resolve())
-      .on("error", (err) => reject(err));
+      .on("error", (err: any) => reject(err));
   });
 
   // 3. Add background creepy drone music
@@ -198,6 +198,6 @@ export async function mergeScenes(sceneVideos: string[], finalOutputPath: string
       ])
       .save(finalOutputPath)
       .on("end", () => resolve())
-      .on("error", (err) => reject(err));
+      .on("error", (err: any) => reject(err));
   });
 }
