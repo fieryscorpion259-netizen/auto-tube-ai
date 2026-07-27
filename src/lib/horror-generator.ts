@@ -1,5 +1,4 @@
 import { google } from "googleapis";
-import fetch from "node-fetch";
 // @ts-ignore
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
@@ -35,8 +34,9 @@ export async function generateHorrorScript(apiKey: string) {
     }
   `;
 
+  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -47,7 +47,7 @@ export async function generateHorrorScript(apiKey: string) {
     }
   );
 
-  const data = await res.json();
+  const data: any = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
     console.error("API xatosi:", JSON.stringify(data, null, 2));
@@ -159,7 +159,7 @@ export async function createSceneVideo(imagePath: string, audioPath: string, out
       ])
       .save(outputPath)
       .on("end", () => resolve())
-      .on("error", (err) => reject(err));
+      .on("error", (err: any) => reject(err));
   });
 }
 
@@ -179,7 +179,7 @@ export async function mergeScenes(sceneVideos: string[], finalOutputPath: string
       .outputOptions('-c copy')
       .save(concatOutputPath)
       .on("end", () => resolve())
-      .on("error", (err) => reject(err));
+      .on("error", (err: any) => reject(err));
   });
 
   // 3. Add background creepy drone music
