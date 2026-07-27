@@ -73,9 +73,11 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      if (url.startsWith(baseUrl)) return url;
-      return `${baseUrl}/dashboard`;
+      if (url.startsWith("/")) return url;
+      try {
+        if (new URL(url).origin === new URL(baseUrl).origin) return url;
+      } catch {}
+      return "/dashboard";
     },
   },
   pages: {
