@@ -7,6 +7,9 @@ const baseAdapter = PrismaAdapter(prisma);
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "autotube-secret-key-2026-super-secure",
+  session: {
+    strategy: "jwt",
+  },
   adapter: {
     ...baseAdapter,
     // Google ba'zan Prisma modelida yo'q maydon yuboradi — filtrlash
@@ -67,10 +70,16 @@ export const authOptions: NextAuthOptions = {
       console.warn(`[XAVFSIZLIK] Ruxsatsiz begona odam kirishga urindi: ${user.email}`);
       return false; // Kirishni taqiqlash (Qaytarib yuboradi)
     },
-    async session({ session, user }) {
-      if (session.user) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token?.sub) {
         // @ts-ignore
-        session.user.id = user.id;
+        session.user.id = (token.id || token.sub) as string;
       }
       return session;
     },
@@ -84,6 +93,5 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/",
-    error: "/",
   },
 };
