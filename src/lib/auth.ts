@@ -6,6 +6,7 @@ import { prisma } from "./prisma";
 const baseAdapter = PrismaAdapter(prisma);
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET || "autotube-secret-key-2026-super-secure",
   adapter: {
     ...baseAdapter,
     // Google ba'zan Prisma modelida yo'q maydon yuboradi — filtrlash
@@ -41,20 +42,21 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Siz ruxsat bergan odamlarning elektron pochtalari ro'yxati (Whitelist)
       const allowedEmails = [
         "muhammadaliuktamov42@gmail.com", 
-        "fieryscorpion259@gmail.com"
-      ];
+        "fieryscorpion259@gmail.com",
+        "shohruhkubayev117@gmail.com"
+      ].map((e) => e.toLowerCase());
       
-      if (user.email) {
+      const email = user.email?.toLowerCase();
+      if (email) {
         // 1. Asosiy egalar bo'lsa kiradi
-        if (allowedEmails.includes(user.email)) return true;
+        if (allowedEmails.includes(email)) return true;
         
         // 2. Saytdan (Admin Paneldan) qo'shilganlar bo'lsa tekshiramiz
         try {
-          const inDatabase = await prisma.whitelist.findUnique({
-            where: { email: user.email }
+          const inDatabase = await prisma.whitelist.findFirst({
+            where: { email: { equals: email, mode: "insensitive" } }
           });
           if (inDatabase) return true;
         } catch (e) {
