@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { fetchChannelById, fetchRecentVideos, searchChannels } from "@/lib/youtube";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;

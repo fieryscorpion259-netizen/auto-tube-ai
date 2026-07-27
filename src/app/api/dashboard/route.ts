@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { safeJsonParse } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;

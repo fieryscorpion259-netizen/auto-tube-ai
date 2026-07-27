@@ -5,6 +5,8 @@ import { generateContentPackage, suggestTopics } from "@/lib/ai";
 import { searchTrendingVideos } from "@/lib/youtube";
 import { safeJsonParse } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
