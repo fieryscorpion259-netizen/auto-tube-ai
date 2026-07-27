@@ -125,7 +125,7 @@ function HomeContent() {
           className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6"
         >
           YouTube Kanalingizni <br />
-          <span className="text-gradient">Avtopilotga</span> O&apos;tkazing
+          <span className="text-gradient mr-3">Avtopilotga</span>O&apos;tkazing
         </motion.h1>
 
         <motion.p
