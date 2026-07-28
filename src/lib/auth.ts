@@ -3,12 +3,18 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 
-// Vercel / Production muhitida NEXTAUTH_URL localhost bo'lsa, uni dinamik ravishda Vercel domeniga o'tkazish
+// Vercel / Environment variables'dagi NEXTAUTH_URL manzilidan ortiqcha /api/auth va /callback yo'llarini tozalash
+if (process.env.NEXTAUTH_URL) {
+  let cleaned = process.env.NEXTAUTH_URL.trim();
+  cleaned = cleaned.replace(/\/api\/auth.*$/i, "");
+  cleaned = cleaned.replace(/\/callback.*$/i, "");
+  cleaned = cleaned.replace(/\/$/, "");
+  process.env.NEXTAUTH_URL = cleaned;
+}
+
 if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
   if (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL.includes("localhost")) {
     process.env.NEXTAUTH_URL = "https://auto-tube-ai-fny2.vercel.app";
-  } else {
-    process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL.trim().replace(/\/$/, "");
   }
 }
 
