@@ -3,9 +3,13 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 
-// Vercel environment variables'dagi yashirin Enter / bo'shliqlarni tozalash
-if (process.env.NEXTAUTH_URL) {
-  process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL.trim().replace(/\/$/, "");
+// Vercel / Production muhitida NEXTAUTH_URL localhost bo'lsa, uni dinamik ravishda Vercel domeniga o'tkazish
+if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+  if (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL.includes("localhost")) {
+    process.env.NEXTAUTH_URL = "https://auto-tube-ai-fny2.vercel.app";
+  } else {
+    process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL.trim().replace(/\/$/, "");
+  }
 }
 
 const baseAdapter = PrismaAdapter(prisma);
