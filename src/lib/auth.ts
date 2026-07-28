@@ -12,6 +12,7 @@ const baseAdapter = PrismaAdapter(prisma);
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "autotube-secret-key-2026-super-secure",
+  useSecureCookies: process.env.NODE_ENV === "production",
   session: {
     strategy: "jwt",
   },
