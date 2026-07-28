@@ -3,6 +3,11 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 
+// Vercel environment variables'dagi yashirin Enter / bo'shliqlarni tozalash
+if (process.env.NEXTAUTH_URL) {
+  process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL.trim().replace(/\/$/, "");
+}
+
 const baseAdapter = PrismaAdapter(prisma);
 
 export const authOptions: NextAuthOptions = {
@@ -90,8 +95,5 @@ export const authOptions: NextAuthOptions = {
       } catch {}
       return "/dashboard";
     },
-  },
-  pages: {
-    signIn: "/",
   },
 };
