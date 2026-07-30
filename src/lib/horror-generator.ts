@@ -26,59 +26,91 @@ export async function generateHorrorScript(apiKey: string, retries = 3): Promise
       "thumbnailPrompt": "A highly descriptive prompt for the YouTube video thumbnail. Dark, creepy, high contrast, glowing eyes.",
       "scenes": [
         {
-          "narration": "Short text to be spoken (MUST BE UNDER 200 CHARACTERS PER SCENE). Generate at least 30-40 scenes to make it long.",
+          "narration": "Short text to be spoken (MUST BE UNDER 200 CHARACTERS PER SCENE). Generate at least 25-35 scenes to make it long.",
           "imagePrompt": "A highly descriptive prompt to generate a 16:9 creepy image for this scene. Foggy, dark, realistic horror.",
-          "isScary": false // Set to true ONLY if this scene is a plot twist, a jumpscare, or a terrifying revelation.
+          "isScary": false
         }
       ]
     }
   `;
 
-  const model = "gemini-2.0-flash";
+  const models = ["gemini-2.0-flash", "gemini-flash-latest"];
 
-  for (let i = 0; i < retries; i++) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" }
-          })
+  for (const model of models) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: "application/json" }
+            })
+          }
+        );
+
+        if (res.status === 429) {
+          console.warn(`[Gemini API - ${model}] Rate limit tushdi, 5 soniya kutilmoqda (${i + 1}/${retries})...`);
+          await new Promise(r => setTimeout(r, 5000));
+          continue;
         }
-      );
 
-      if (res.status === 429) {
-        console.warn(`[Gemini API] Rate limit tushdi, 15 soniya kutilmoqda (${i + 1}/${retries})...`);
-        await new Promise(r => setTimeout(r, 15000));
-        continue;
+        const data: any = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+          console.error(`[Gemini API - ${model}] API xatosi:`, JSON.stringify(data, null, 2));
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        if (start === -1 || end === -1) {
+          continue;
+        }
+
+        const cleanJson = text.substring(start, end + 1);
+        const parsed = JSON.parse(cleanJson);
+        if (parsed && parsed.thumbnailPrompt && Array.isArray(parsed.scenes)) {
+          return parsed;
+        }
+      } catch (e: any) {
+        console.warn(`[Gemini API - ${model}] Urinish xatosi: ${e.message}`);
+        await new Promise(r => setTimeout(r, 3000));
       }
-
-      const data: any = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) {
-        console.error("API xatosi:", JSON.stringify(data, null, 2));
-        if (i === retries - 1) throw new Error("Failed to generate script: API no text");
-        await new Promise(r => setTimeout(r, 5000));
-        continue;
-      }
-
-      const start = text.indexOf('{');
-      const end = text.lastIndexOf('}');
-      if (start === -1 || end === -1) {
-        throw new Error("Failed to find JSON in AI response");
-      }
-
-      const cleanJson = text.substring(start, end + 1);
-      return JSON.parse(cleanJson);
-    } catch (e: any) {
-      if (i === retries - 1) throw e;
-      console.warn(`[Gemini API] Urinish xatosi: ${e.message}, qayta urinish...`);
-      await new Promise(r => setTimeout(r, 5000));
     }
   }
+
+  console.warn("⚠️ AI limitlari sababli zaxira (Fallback) ssenariy ishlatilmoqda...");
+  return {
+    title: "The Unseen Creature in the Woods - Terrifying True Story",
+    description: "A chilling horror story of an encounter deep inside an abandoned forest... #horror #scarystories #creepypasta",
+    thumbnailPrompt: "A dark foggy creepy forest with red glowing eyes in the trees, terrifying horror atmosphere",
+    scenes: [
+      {
+        narration: "It was past midnight when I heard a strange tapping sound outside my cabin window...",
+        imagePrompt: "Dark scary cabin in the woods at night with moonlight fog",
+        isScary: false
+      },
+      {
+        narration: "I looked outside into the darkness, and saw two glowing red eyes staring back at me...",
+        imagePrompt: "Terrifying shadow creature with glowing red eyes behind trees in foggy forest",
+        isScary: true
+      },
+      {
+        narration: "I backed away slowly as the front door handle began to slowly turn...",
+        imagePrompt: "Old wooden cabin door handle turning slowly in dark room with eerie shadows",
+        isScary: true
+      },
+      {
+        narration: "A cold whisper echoed through the hallway: 'You shouldn't have stayed here alone.'",
+        imagePrompt: "Dark haunted hallway in abandoned wooden house creepy shadows horror",
+        isScary: true
+      }
+    ]
+  };
 }
 
 // 2. Rasm yasash (Pollinations AI - 100% Tekin)
