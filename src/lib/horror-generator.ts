@@ -15,7 +15,7 @@ if (ffprobeStatic && ffprobeStatic.path) {
 }
 
 // 1. Ssenariy va Promptlarni AI (Gemini) orqali yasash
-export async function generateHorrorScript(apiKey: string) {
+export async function generateHorrorScript(apiKey: string, retries = 3): Promise<any> {
   const prompt = `
     Act as a professional YouTube storyteller in the Horror/Scary Story niche.
     Write a VERY LONG and detailed scary story in English. The final spoken audio MUST be at least 10 minutes long (around 1500 to 2000 words).
@@ -34,38 +34,50 @@ export async function generateHorrorScript(apiKey: string) {
     }
   `;
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
+  const model = "gemini-2.0-flash";
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        }
+      );
+
+      if (res.status === 429) {
+        console.warn(`[Gemini API] Rate limit tushdi, 15 soniya kutilmoqda (${i + 1}/${retries})...`);
+        await new Promise(r => setTimeout(r, 15000));
+        continue;
+      }
+
+      const data: any = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        console.error("API xatosi:", JSON.stringify(data, null, 2));
+        if (i === retries - 1) throw new Error("Failed to generate script: API no text");
+        await new Promise(r => setTimeout(r, 5000));
+        continue;
+      }
+
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start === -1 || end === -1) {
+        throw new Error("Failed to find JSON in AI response");
+      }
+
+      const cleanJson = text.substring(start, end + 1);
+      return JSON.parse(cleanJson);
+    } catch (e: any) {
+      if (i === retries - 1) throw e;
+      console.warn(`[Gemini API] Urinish xatosi: ${e.message}, qayta urinish...`);
+      await new Promise(r => setTimeout(r, 5000));
     }
-  );
-
-  const data: any = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    console.error("API xatosi:", JSON.stringify(data, null, 2));
-    throw new Error("Failed to generate script: API no text");
-  }
-
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
-  if (start === -1 || end === -1) {
-    throw new Error("Failed to find JSON in AI response");
-  }
-
-  const cleanJson = text.substring(start, end + 1);
-  try {
-    return JSON.parse(cleanJson);
-  } catch (e) {
-    console.error("JSON parse xatosi:", cleanJson);
-    throw new Error("Failed to parse AI JSON");
   }
 }
 
