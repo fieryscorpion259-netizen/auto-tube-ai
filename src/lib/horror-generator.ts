@@ -180,20 +180,18 @@ export async function createSceneVideo(imagePath: string, audioPath: string, out
       .loop(duration) // loop exactly for the duration
       .input(audioPath);
 
-    const visualFilters = isScary
-      ? `zoompan=z='min(zoom+0.015,1.5)':d=25*${duration}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080,eq=contrast=1.5:brightness=-0.1,fade=t=in:st=0:d=0.5,fade=t=out:st=${duration - 0.5}:d=0.5`
-      : `zoompan=z='min(zoom+0.0015,1.5)':d=25*${duration}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080,fade=t=in:st=0:d=1,fade=t=out:st=${duration - 1}:d=1`;
+    const visualFilter = isScary
+      ? `zoompan=z='min(zoom+0.015,1.5)':d=25*${Math.ceil(duration)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080,eq=contrast=1.5:brightness=-0.1,fade=t=in:st=0:d=0.5,fade=t=out:st=${Math.max(0, duration - 0.5)}:d=0.5`
+      : `zoompan=z='min(zoom+0.0015,1.5)':d=25*${Math.ceil(duration)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080,fade=t=in:st=0:d=1,fade=t=out:st=${Math.max(0, duration - 1)}:d=1`;
 
-    const audioFilters = isScary
-      ? `vibrato=f=6.5:d=0.5,aecho=0.8:0.88:60:0.4` // Demonic scary voice
-      : `afade=t=in:st=0:d=0.5,afade=t=out:st=${duration - 0.5}:d=0.5`; // Normal fade
+    const audioFilter = isScary
+      ? `vibrato=f=6.5:d=0.5,aecho=0.8:0.88:60:0.4`
+      : `afade=t=in:st=0:d=0.5,afade=t=out:st=${Math.max(0, duration - 0.5)}:d=0.5`;
+
+    const filterString = `[0:v]format=yuv420p,${visualFilter}[v_out];[1:a]${audioFilter}[a_out]`;
 
     cmd
-      .complexFilter([
-        { filter: 'format', options: 'yuv420p', inputs: '0:v', outputs: 'formatted' },
-        { filter: 'filtergraph', options: visualFilters, inputs: 'formatted', outputs: 'v_out' },
-        { filter: 'filtergraph', options: audioFilters, inputs: '1:a', outputs: 'a_out' }
-      ], ['v_out', 'a_out'])
+      .complexFilter(filterString, ["v_out", "a_out"])
       .outputOptions([
         "-c:v libx264",
         "-c:a aac",
