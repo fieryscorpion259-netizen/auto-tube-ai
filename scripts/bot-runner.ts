@@ -71,7 +71,22 @@ export async function runVideoPipeline(userId: string) {
       publishDate
     );
 
-    console.log(`✅ [BOT] MUAFFAQIYATLI! Video ID: ${videoId}. U ${publishDate.toLocaleString()} da ommaviy (Public) bo'ladi.`);
+    // 6. Bazaga saqlash
+    await prisma.video.create({
+      data: {
+        userId,
+        title: script.title,
+        description: script.description,
+        hashtags: "#horror #scarystory #creepypasta",
+        tags: "horror, scary story, creepypasta",
+        thumbnailIdea: script.thumbnailPrompt,
+        scenesJson: JSON.stringify(script.scenes),
+        status: "uploaded",
+        youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+      },
+    });
+
+    console.log(`✅ [BOT] MUAFFAQIYATLI! Video YouTube kanalingizga joylandi! Video ID: ${videoId}`);
 
   } catch (err) {
     console.error("❌ [BOT xatosi]:", err);

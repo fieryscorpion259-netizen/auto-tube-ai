@@ -34,14 +34,14 @@ export async function uploadToYouTube(
   title: string,
   description: string,
   tags: string[],
-  publishAtDate: Date // Qachon ommaviy bo'lishi (Scheduled)
+  publishAtDate?: Date
 ) {
   const auth = await getAuthClient(userId);
   const youtube = google.youtube({ version: "v3", auth });
 
   console.log("Videoni yuklash boshlandi...");
 
-  // 1. Videoni yuklash
+  // 1. Videoni to'g'ridan-to'g'ri PUBLIC (Ommaviy) shaklda yuklash
   const videoRes = await youtube.videos.insert({
     part: ["snippet", "status"],
     requestBody: {
@@ -52,8 +52,7 @@ export async function uploadToYouTube(
         categoryId: "24", // Entertainment
       },
       status: {
-        privacyStatus: "private", // Oldin private bo'ladi
-        publishAt: publishAtDate.toISOString(), // Belgilangan vaqtda "public" bo'ladi
+        privacyStatus: "public",
         selfDeclaredMadeForKids: false,
       },
     },
@@ -64,18 +63,22 @@ export async function uploadToYouTube(
 
   const videoId = videoRes.data.id;
   if (!videoId) throw new Error("Video yuklanmadi");
-  console.log("Video yuklandi! ID:", videoId);
+  console.log("Video muvaffaqiyatli YouTube'ga yuklandi! ID:", videoId);
 
   // 2. Thumbnail (Prevyu) qo'yish
   if (thumbnailPath && fs.existsSync(thumbnailPath)) {
-    console.log("Prevyu (Thumbnail) yuklanmoqda...");
-    await youtube.thumbnails.set({
-      videoId,
-      media: {
-        body: fs.createReadStream(thumbnailPath),
-      },
-    });
-    console.log("Prevyu o'rnatildi!");
+    try {
+      console.log("Prevyu (Thumbnail) yuklanmoqda...");
+      await youtube.thumbnails.set({
+        videoId,
+        media: {
+          body: fs.createReadStream(thumbnailPath),
+        },
+      });
+      console.log("Prevyu o'rnatildi!");
+    } catch (e: any) {
+      console.warn("Thumbnail yuklashda ogohlantirish (kanalda ruxsat bo'lmasligi mumkin):", e.message);
+    }
   }
 
   return videoId;
