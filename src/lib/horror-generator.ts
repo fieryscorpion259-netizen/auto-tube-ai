@@ -207,37 +207,17 @@ export async function createSceneVideo(imagePath: string, audioPath: string, out
 
 export async function mergeScenes(sceneVideos: string[], finalOutputPath: string): Promise<void> {
   const concatListPath = path.join(process.cwd(), "tmp", "concat_list.txt");
-  const concatOutputPath = path.join(process.cwd(), "tmp", "concat_output.mp4");
 
   // 1. Create concat list
   const listContent = sceneVideos.map(v => `file '${v}'`).join('\n');
   await fs.writeFile(concatListPath, listContent);
 
-  // 2. Concat videos (Fast, no re-encoding)
-  await new Promise<void>((resolve, reject) => {
+  // 2. Concat videos (Fast, reliable, no re-encoding)
+  return new Promise<void>((resolve, reject) => {
     ffmpeg()
       .input(concatListPath)
       .inputOptions(['-f concat', '-safe 0'])
       .outputOptions('-c copy')
-      .save(concatOutputPath)
-      .on("end", () => resolve())
-      .on("error", (err: any) => reject(err));
-  });
-
-  // 3. Add background creepy drone music
-  return new Promise<void>((resolve, reject) => {
-    ffmpeg()
-      .input(concatOutputPath)
-      .input("sine=frequency=45:beep_factor=4:duration=99999") // Lavfi eerie drone
-      .inputFormat("lavfi")
-      .complexFilter([
-        { filter: 'amix', options: { inputs: 2, duration: 'first', weights: '1 0.05' } }
-      ])
-      .outputOptions([
-        "-c:v copy",
-        "-c:a aac",
-        "-b:a 192k"
-      ])
       .save(finalOutputPath)
       .on("end", () => resolve())
       .on("error", (err: any) => reject(err));
