@@ -75,6 +75,7 @@ export async function runVideoPipeline(userId: string) {
 
   } catch (err) {
     console.error("❌ [BOT xatosi]:", err);
+    throw err;
   }
 }
 
