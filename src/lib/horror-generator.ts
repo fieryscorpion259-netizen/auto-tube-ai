@@ -113,29 +113,57 @@ export async function generateHorrorScript(apiKey: string, retries = 3): Promise
   };
 }
 
-// 2. Rasm yasash (Pollinations AI - 100% Tekin)
-export async function generateImage(prompt: string, outputPath: string, isThumbnail = false, retries = 3): Promise<string> {
-  // Asosiy video va Thumbnail uchun ham format 1920x1080 (16:9)
+// 2. Rasm yasash (Pollinations AI + Fallback Zaxira)
+export async function generateImage(prompt: string, outputPath: string, isThumbnail = false, retries = 4): Promise<string> {
   const width = 1920;
   const height = 1080;
 
-  const encodedPrompt = encodeURIComponent(prompt + ", ultra realistic, 8k, dark horror lighting, cinematic");
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&nologo=true`;
+  // Clean prompt and remove special characters that cause HTTP 500
+  const cleanPrompt = prompt.slice(0, 120).replace(/[^a-zA-Z0-9 ,]/g, "");
+  
+  const promptsToTry = [
+    `${cleanPrompt}, dark horror lighting, cinematic`,
+    `dark scary foggy horror scene, cinematic, 8k`,
+    `creepy scary night atmosphere, cinematic`,
+  ];
 
   for (let i = 0; i < retries; i++) {
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Rasm yasashda HTTP xato: ${response.status}`);
+      const activePrompt = promptsToTry[i % promptsToTry.length];
+      const encodedPrompt = encodeURIComponent(activePrompt);
+      const seed = Math.floor(Math.random() * 100000);
+      const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`;
 
-      const buffer = await response.arrayBuffer();
-      await fs.writeFile(outputPath, Buffer.from(buffer));
-      return outputPath;
+      const response = await fetch(url);
+      if (response.ok) {
+        const buffer = await response.arrayBuffer();
+        if (buffer.byteLength > 2000) {
+          await fs.writeFile(outputPath, Buffer.from(buffer));
+          return outputPath;
+        }
+      }
+      console.warn(`Rasm yuklash xatosi (urinish ${i + 1}/${retries}): HTTP status ${response.status}`);
+      await new Promise(r => setTimeout(r, 2000));
     } catch (e: any) {
       console.warn(`Rasm yuklash xatosi (urinish ${i + 1}/${retries}): ${e.message}`);
-      if (i === retries - 1) throw new Error("Rasm butunlay yuklanmadi");
-      await new Promise(r => setTimeout(r, 3000)); // 3 soniya kutib qayta urinish
+      await new Promise(r => setTimeout(r, 2000));
     }
   }
+
+  // Zaxira: Agar AI rasm serveri HTTP 500 bersa, video to'xtab qolmasligi uchun picsum zaxira rasmini ishlatish
+  try {
+    console.warn("⚠️ AI rasm serveri javob bermadi, zaxira rasm yuklanmoqda...");
+    const fallbackUrl = `https://picsum.photos/1920/1080?grayscale`;
+    const fbRes = await fetch(fallbackUrl);
+    if (fbRes.ok) {
+      const fbBuffer = await fbRes.arrayBuffer();
+      await fs.writeFile(outputPath, Buffer.from(fbBuffer));
+      return outputPath;
+    }
+  } catch (err) {
+    console.warn("Fallback rasm ham ishlamadi:", err);
+  }
+
   return outputPath;
 }
 
