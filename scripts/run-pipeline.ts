@@ -8,9 +8,10 @@ async function executeBot() {
   console.log("🚀 GITHUB ACTIONS: AUTO-TUBE AI BOT ISHGA TUSHDI!");
   console.log("=========================================");
   
-  // Bazadagi eng birinchi google orqali kirgan foydalanuvchini topish (Asosiy Admin)
+  // Bazadagi eng oxirgi (yangi) google orqali kirgan foydalanuvchini topish (DreamNest AI)
   const account = await prisma.account.findFirst({
-    where: { provider: "google" }
+    where: { provider: "google" },
+    orderBy: { id: "desc" }
   });
 
   if (!account) {
