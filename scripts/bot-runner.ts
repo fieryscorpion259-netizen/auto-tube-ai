@@ -82,7 +82,7 @@ export async function runVideoPipeline(userId: string) {
         thumbnailIdea: script.thumbnailPrompt,
         scenesJson: JSON.stringify(script.scenes),
         status: "uploaded",
-        youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+        youtubeVideoId: videoId,
       },
     });
 
