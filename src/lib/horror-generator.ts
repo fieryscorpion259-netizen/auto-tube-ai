@@ -113,28 +113,24 @@ export async function generateHorrorScript(apiKey: string, retries = 3): Promise
   };
 }
 
-// 2. Rasm yasash (Pollinations AI + Fallback Zaxira)
-export async function generateImage(prompt: string, outputPath: string, isThumbnail = false, retries = 4): Promise<string> {
+// 2. Rasm yasash (Tezkor AI + Zaxira)
+export async function generateImage(prompt: string, outputPath: string, isThumbnail = false, retries = 1): Promise<string> {
   const width = 1920;
   const height = 1080;
 
-  // Clean prompt and remove special characters that cause HTTP 500
-  const cleanPrompt = prompt.slice(0, 120).replace(/[^a-zA-Z0-9 ,]/g, "");
-  
-  const promptsToTry = [
-    `${cleanPrompt}, dark horror lighting, cinematic`,
-    `dark scary foggy horror scene, cinematic, 8k`,
-    `creepy scary night atmosphere, cinematic`,
-  ];
+  const cleanPrompt = prompt.slice(0, 100).replace(/[^a-zA-Z0-9 ,]/g, "");
+  const seed = Math.floor(Math.random() * 100000);
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt + ", dark horror lighting")}` +
+    `?width=${width}&height=${height}&nologo=true&seed=${seed}`;
 
-  for (let i = 0; i < retries; i++) {
+  for (let i = 0; i <= retries; i++) {
     try {
-      const activePrompt = promptsToTry[i % promptsToTry.length];
-      const encodedPrompt = encodeURIComponent(activePrompt);
-      const seed = Math.floor(Math.random() * 100000);
-      const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000); // 6 soniya timeout
 
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         const buffer = await response.arrayBuffer();
         if (buffer.byteLength > 2000) {
@@ -142,17 +138,14 @@ export async function generateImage(prompt: string, outputPath: string, isThumbn
           return outputPath;
         }
       }
-      console.warn(`Rasm yuklash xatosi (urinish ${i + 1}/${retries}): HTTP status ${response.status}`);
-      await new Promise(r => setTimeout(r, 2000));
     } catch (e: any) {
-      console.warn(`Rasm yuklash xatosi (urinish ${i + 1}/${retries}): ${e.message}`);
-      await new Promise(r => setTimeout(r, 2000));
+      console.warn(`AI rasm sezilarli sekinlashdi yoki band (urinish ${i + 1}): ${e.message}`);
     }
   }
 
-  // Zaxira: Agar AI rasm serveri HTTP 500 bersa, video to'xtab qolmasligi uchun picsum zaxira rasmini ishlatish
+  // Zaxira: AI rasm serveri sekin bo'lsa, tezkor HD zaxira rasm yuklanadi
   try {
-    console.warn("⚠️ AI rasm serveri javob bermadi, zaxira rasm yuklanmoqda...");
+    console.warn("⚠️ AI serveri band, tezkor zaxira rasm ishlatilmoqda...");
     const fallbackUrl = `https://picsum.photos/1920/1080?grayscale`;
     const fbRes = await fetch(fallbackUrl);
     if (fbRes.ok) {
@@ -161,7 +154,7 @@ export async function generateImage(prompt: string, outputPath: string, isThumbn
       return outputPath;
     }
   } catch (err) {
-    console.warn("Fallback rasm ham ishlamadi:", err);
+    console.warn("Fallback rasm xatosi:", err);
   }
 
   return outputPath;
