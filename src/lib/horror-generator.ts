@@ -17,16 +17,16 @@ if (ffprobeStatic && ffprobeStatic.path) {
 // 1. Ssenariy va Promptlarni AI (Gemini) orqali yasash
 export async function generateHorrorScript(apiKey: string, retries = 3): Promise<any> {
   const prompt = `
-    Act as a professional YouTube storyteller in the Horror/Scary Story niche.
-    Write a VERY LONG and detailed scary story in English. The final spoken audio MUST be at least 10 minutes long (around 1500 to 2000 words).
+    Act as a VIRAL YouTube Horror Content Creator & SEO Expert with millions of subscribers.
+    Write a VERY POPULAR and terrifying horror story in English (1500+ words).
     Provide the response in pure JSON format:
     {
-      "title": "SEO title for YouTube",
-      "description": "SEO description with #hashtags",
-      "thumbnailPrompt": "A highly descriptive prompt for the YouTube video thumbnail. Dark, creepy, high contrast, glowing eyes.",
+      "title": "VIRAL High-CTR YouTube Title (e.g., '3 Rules to Survive the Night Shift at Cabin 4' or 'I Opened the Forbidden Door at 3 AM'). Must be catchy and terrifying!",
+      "description": "SEO-optimized YouTube description with emotional hook, timestamp summary, and viral hashtags: #horror #scarystories #creepypasta #truescarystories #scary",
+      "thumbnailPrompt": "A terrifying, viral YouTube thumbnail prompt. High contrast, ultra realistic, creepy glowing red eyes in fog, 8k cinematic horror, dramatic lighting.",
       "scenes": [
         {
-          "narration": "Short text to be spoken (MUST BE UNDER 200 CHARACTERS PER SCENE). Generate at least 25-35 scenes to make it long.",
+          "narration": "Short text to be spoken (MUST BE UNDER 200 CHARACTERS PER SCENE). Generate at least 25-35 scenes.",
           "imagePrompt": "A highly descriptive prompt to generate a 16:9 creepy image for this scene. Foggy, dark, realistic horror.",
           "isScary": false
         }
