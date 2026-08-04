@@ -64,7 +64,8 @@ export const authOptions: NextAuthOptions = {
       const allowedEmails = [
         "muhammadaliuktamov42@gmail.com", 
         "fieryscorpion259@gmail.com",
-        "shohruhkubayev117@gmail.com"
+        "shohruhkubayev117@gmail.com",
+        "tajribay5@gmail.com"
       ].map((e) => e.toLowerCase());
       
       const email = user.email?.toLowerCase();
